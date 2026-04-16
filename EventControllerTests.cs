@@ -72,5 +72,38 @@ namespace Eventify.Tests
             var notFoundResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Failed to Updated event.", notFoundResult.Value);
         }
+        [Fact]
+        public async Task SearchEvents_ShouldReturnOk_WithMatchingEvents()
+        {
+            // Arrange
+            string searchTerm = "Test";
+            var fakeEvents = new List<Event>
+            {
+                new Event { EventId = 1, Title = "Test Event" , CategoryId = 2 }
+            };
+            _mockRepo.Setup(repo => repo.SearchEvents(searchTerm, null)).ReturnsAsync(fakeEvents);
+
+            // Act
+            var result = await _controller.SearchEvents(searchTerm , null);
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedEvents = Assert.IsAssignableFrom<IEnumerable<dynamic>>(okResult.Value);
+            Assert.NotNull(returnedEvents);
+        }
+        [Fact]
+        public async Task SearchEvents_ShouldReturnEmpty_WhenNoMatch()
+        {
+            // Arrange
+            string serachTerm = "none";
+            var fakeEvent = new List<Event>();
+            _mockRepo.Setup(repo => repo.SearchEvents(serachTerm, null)).ReturnsAsync(new List<dynamic>()); 
+            // Act 
+            var result = await _controller.SearchEvents(serachTerm, null);
+            // Assert 
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedEvents = Assert.IsAssignableFrom<IEnumerable<dynamic>>(okResult.Value);
+            Assert.Empty(returnedEvents);
+
+        }
     }
 }
