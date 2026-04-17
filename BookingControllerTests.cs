@@ -51,7 +51,7 @@ namespace Eventify.Tests
         public async Task CreateBooking_ShouldReturnBadRequest_WhenEventIsFull()
         {
             // Arrange
-            int eventId= 3;
+            int eventId = 3;
             _mockRepo.Setup(repo => repo.CreateBookingAsync(It.IsAny<BookingDto>()))
                      .ReturnsAsync("Event is full");
             // Act
@@ -90,7 +90,27 @@ namespace Eventify.Tests
             string message = data.GetType().GetProperty("Message").GetValue(data, null);
 
             Assert.Equal("Could not cancel booking or booking not found.", message);
+        }
+        [Fact]
+        public async Task GetAllTickets_ShouldReturnOk_WithListOfTickets()
+        {
+            // Arrange
+            int userId = 1;
+            var bookinglist = new List<dynamic>
+            {
+                new { BookingId = 101, Title = "Tech Conference", StartDate = DateTime.Now.AddDays(5)
+                , Location = "Damascus", NameCategory = "IT", Status = 1 },
+                new { BookingId = 102, Title = "Music Fest", StartDate = DateTime.Now.AddDays(10)
+                , Location = "Aleppo", NameCategory = "Art", Status = 1 }
+            };
+            _mockRepo.Setup(repo => repo.GetUserBookingsAsync(userId)).ReturnsAsync(bookinglist);
+            // Act 
+            var result = await _controller.GetMyTickets();
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
 
+            var returnedTickets = Assert.IsAssignableFrom<IEnumerable<dynamic>>(okResult.Value);
+            Assert.Equal(2, returnedTickets.Count());
         }
     }
 }
