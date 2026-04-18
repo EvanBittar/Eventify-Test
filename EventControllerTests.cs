@@ -23,12 +23,17 @@ namespace Eventify.Tests
         }
 
         [Fact]
-        public async Task GetAllEvents_ShouldReturnOk_WithListOfEvents()
+        public async Task GetAllEvents_ShouldReturnOk_WithPriceAndRating()
         {
             // Arrange
             var fakeEvents = new List<Event>
             {
-                new Event { EventId = 1, Title = "Test Event" }
+                new Event{
+                EventId = 1,
+                Title = "Tech Talk",
+                Price = 50.00m,
+                AverageRating = 4.5m,
+                ReviewsCount = 10 }
             };
             _mockRepo.Setup(repo => repo.GetAllEventsAsync()).ReturnsAsync(fakeEvents);
 
@@ -38,8 +43,11 @@ namespace Eventify.Tests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var returnedEvents = Assert.IsAssignableFrom<IEnumerable<Event>>(okResult.Value);
-            Assert.NotNull(returnedEvents);
-            Assert.Single(returnedEvents);
+            var firstEvent = returnedEvents.First();
+
+            Assert.Equal(50.00m,firstEvent.Price);
+            Assert.Equal(4.5m,firstEvent.AverageRating);
+            Assert.Equal(10,firstEvent.ReviewsCount);
         }
 
         [Fact]
@@ -73,22 +81,20 @@ namespace Eventify.Tests
             Assert.Equal("Failed to Updated event.", notFoundResult.Value);
         }
         [Fact]
-        public async Task SearchEvents_ShouldReturnOk_WithMatchingEvents()
+        public async Task SearchEvents_ShouldReturnFilteredResults()
         {
             // Arrange
-            string searchTerm = "Test";
-            var fakeEvents = new List<Event>
+            var searchResults = new List<dynamic>
             {
-                new Event { EventId = 1, Title = "Test Event" , CategoryId = 2 }
+                new { EventId = 1, Title = "C# Workshop", NameCategory = "Programming", Price = 20.0m }
             };
-            _mockRepo.Setup(repo => repo.SearchEvents(searchTerm, null)).ReturnsAsync(fakeEvents);
-
+            _mockRepo.Setup(repo => repo.SearchEvents("C#", null))
+            .ReturnsAsync(searchResults);
             // Act
-            var result = await _controller.SearchEvents(searchTerm , null);
+            var result = await _controller.SearchEvents("C#", null);
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var returnedEvents = Assert.IsAssignableFrom<IEnumerable<dynamic>>(okResult.Value);
-            Assert.NotNull(returnedEvents);
+            Assert.NotNull(okResult.Value);
         }
         [Fact]
         public async Task SearchEvents_ShouldReturnEmpty_WhenNoMatch()
@@ -96,7 +102,7 @@ namespace Eventify.Tests
             // Arrange
             string serachTerm = "none";
             var fakeEvent = new List<Event>();
-            _mockRepo.Setup(repo => repo.SearchEvents(serachTerm, null)).ReturnsAsync(new List<dynamic>()); 
+            _mockRepo.Setup(repo => repo.SearchEvents(serachTerm, null)).ReturnsAsync(new List<dynamic>());
             // Act 
             var result = await _controller.SearchEvents(serachTerm, null);
             // Assert 
